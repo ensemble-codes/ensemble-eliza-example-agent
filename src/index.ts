@@ -6,6 +6,9 @@ import { TelegramClientInterface } from "@ai16z/client-telegram";
 import { TwitterClientInterface } from "@ai16z/client-twitter";
 import { Ensemble } from "@ensemble-ai/sdk";
 
+
+
+
 import {
     AgentRuntime,
     CacheManager,
@@ -35,6 +38,23 @@ import { fileURLToPath } from "url";
 import yargs from "yargs";
 import dotenv from "dotenv";
 import { ethers } from 'ethers';
+
+import { getPrice } from "./Execution_Service/src/oracle.service.js";
+import  { init, sendTask, publishJSONToIpfs } from "./Execution_Service/src/dal.service.js";
+
+// init the dal service
+init();
+
+const sendTaskWrapper = async () => {
+  var taskDefinitionId = 1;
+  console.log(`taskDefinitionId: ${taskDefinitionId}`);
+
+  const result = getPrice("ETHUSDT");
+  // result.price = req.body.fakePrice || result.price;
+  const cid = await publishJSONToIpfs(result);
+  const data = "hello";
+  await sendTask(cid, data, taskDefinitionId);
+}
 
 // Creating a signer with a private key
 export const createSigner = () => {
@@ -469,11 +489,13 @@ async function startAgent(character: Character, directClient: DirectClient) {
       await runtime.clients.twitter.post.generateNewTweet()
 
       // Task Completion
-      ensemble.completeTask(task.id, `Done tweet about topic: ${task.prompt}`)
+      // ensemble.completeTask(task.id, `Done tweet about topic: ${task.prompt}`)
     }
 
     // Adding the executeTask function as a listener so it will be called when a new task is received
     ensemble.setOnNewTaskListener(executeTask)
+
+    await sendTaskWrapper()
 
     try {
       await runtime.initialize();
@@ -488,19 +510,6 @@ async function startAgent(character: Character, directClient: DirectClient) {
     runtime.clients = initializedClients;
     directClient.registerAgent(runtime);
 
-    // ensemble.setOnNewTaskListener(async (task: TaskData) => {
-    //   console.log('task', task);
-    //   ensemble.sendProposal(task.id, '1');
-    //   // runtime.processActions()
-    //   // console.log('taskId', taskId);
-    //   // console.log('runtime', runtime);
-    //   // handleTask(taskId);
-    // });
-    // ensemble.setOnNewTaskListener((taskId) => {
-    //   console.log('taskId', taskId);
-    //   console.log('runtime', runtime);
-    //   // handleTask(taskId);
-    // });
     return clients;
   } catch (error) {
     elizaLogger.error(`Error starting agent for character ${character.name}:`, error);
