@@ -39,8 +39,8 @@ import yargs from "yargs";
 import dotenv from "dotenv";
 import { ethers } from 'ethers';
 
-import { getPrice } from "./Execution_Service/src/oracle.service.js";
-import  { init, sendTask, publishJSONToIpfs } from "./Execution_Service/src/dal.service.js";
+import { getPrice } from "./Execution_Service/src/oracle.service.ts";
+import  { init, sendTask, publishJSONToIpfs } from "./Execution_Service/src/dal.service.ts";
 
 // init the dal service
 init();
